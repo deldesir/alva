@@ -12,7 +12,7 @@
 ! var name     = Alva
 ! var fullname = Alva X
 ! var age      = 22
-! var birthday =  23 Mas
+! var birthday = 23 Mas
 ! var sex      = N/A
 ! var location = Haiti
 ! var city     = Gonaives
@@ -77,7 +77,6 @@
 ! sub mpa	= mwen pa
 ! sub mpat	= mwen pa te
 ! sub mpral	= mwen pral
-! sub m pat	= mwen pa te
 ! sub mpap	= mwen pap
 ! sub fom	= fok mwen
 ! sub na	= nou ap
