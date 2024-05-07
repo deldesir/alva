@@ -1,3 +1,4 @@
+rivescript
 Flask
 six
 redis
