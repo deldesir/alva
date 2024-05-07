@@ -1,30 +1,130 @@
 ! version = 2.0
 
+! var prenon = Konex
+! var adres = 25, ri Pastel
+! var tel = 32716969
+
+! local concat = space
+! global kont = 100
+! global kantite_repons = 3
+
 > begin
-	+ request // This trigger is tested first.
-	- {ok}    // An {ok} in the response means it's okay to get a real reply
+  + request
+  * <get rankontre> != true => <set rankontre=true>{topic=prezantasyon}{ok}
+  - {ok}
 < begin
 
-// The Botmaster's Name
-! var master = localuser
+> topic prezantasyon
+  + *
+  - 🤗 Mèsi paske w chwazi Konex. Nou vle ba w pi bon sèvis posib. Pou sa, nou bezwen anrejistre w anvan. Tanpri ban nou non w (jis ban nou non w, san siyati a) {topic=anrejistreman}
+  ^ <set repons=0>{topic=anrejistreman}
+  - 🤗 Byenvini sou Konex. Pou nou ka ba w pi bon sèvis posib, nou bezwen anrejistre w anvan. Kijan ou rele svp? (jis ban nou non w, san siyati a) {topic=anrejistreman}
+  ^ <set repons=0>{topic=anrejistreman}
+  - 🤗 Konex di w byenvini. Nan sousi pou nou ba w pi bon sèvis posib, nou bezwen anrejistre w anvan. Kòman ou rele? (jis ban nou non w, san siyati a) {topic=anrejistreman}
+  ^ <set repons=0>{topic=anrejistreman}
+< topic
+  
+> topic anrejistreman_jeneral
+  + [*] (kontinye|continue|anile|cancel|stop|kite|quit) [*]
+  - Pa gen pwoblèm. Nou ka jis pale. Kòman nou ka ede w?{topic=random}
+  - Ok. Nou ka jis pale. Kijan nou ka ede w?{topic=random}
+  
+  + int kanpe
+  - Pa gen pwoblèm. Ki jan nou ka ede w?{topic=random}
+  
+  + int ed *
+  - Si w pa anvi di nou <star> w, pa gen pwoblèm, jis voye "kontinye".
+  - Oubyen jis voye "kontinye" si w pa vle di nou <star> w.
+< topic
 
-// Bot Variables
-! var name     = Alva
-! var fullname = Alva X
-! var age      = 22
-! var birthday = 23 Mas
-! var sex      = N/A
-! var location = Haiti
-! var city     = Gonaives
-! var eyes     = blue
-! var hair     = light brown
-! var hairlen  = short
-! var color    = blue
-! var band     = Nickelback
-! var book     = Myst
-! var author   = Stephen King
-! var job      = robot
-! var website  = https://konexht.com
+
+> topic anrejistreman includes anrejistreman_jeneral
+  + *
+  - <set prenon=<formal>>Non ou se <get prenon>? Bon bagay. Nou kontan rekonèt ou. Klike sou https://konexht.github.io pou w gen yon ide sou sèvis nou ofri yo. Apre sa, kòman nou ka ede w?
+  ^ <set repons=0>{topic=random}
+  
+  - <set prenon=<formal>><get prenon> se yon bèl non. Kounya, pou w ka gen yon ide sou sèvis nou ofri yo, ale sou https://konexht.github.io. Yon kesyon, yon sijesyon? Annou pale.
+  ^ <set repons=0>{topic=random}
+  
+  - <set prenon=<formal>>Non ou se <get prenon>? Bon bagay. Nou kontan rekonèt ou. Klike sou https://konexht.github.io pou w gen yon ide sou sèvis nou ofri yo. Bon di m non, kòman mwen ka ede w?
+  ^ <set repons=0>{topic=random}
+  
+  - <set prenon=<formal>>Nou kontan fè konesans avèk ou <get prenon>. Nou mete kèk detay pou ou sou sèvis nou ofri yo sou https://konexht.github.io. Bon, ann pale kounya.
+  ^ <set repons=0>{topic=random}
+  
+  + * *
+  * <get repons> > <env kantite_repons> => {@int abandone}
+  - Voye sèlman prenon an. Siyati a pa ladan l. {@int ed}
+  - Nou bezwen sèlman prenon an. {@int ed}
+  - Sanble se tout non w ou voye. Se sèlman prenon an nou bezwen. {@int ed}
+  
+  + (non mwen|mwen rele|non pa mwen|rele mwen|yo rele mwen|ou ka rele mwen) *
+  - @ <star2>
+  
+  + int abandone
+  - <set prenon=<id>> Ok. M ap jis rele w <get prenon>. De tout fason, nou ka pale. Kòman nou ka ede w?
+  ^ {topic=random}
+  
+  + int ed
+  - <add repons=1>{@int ed prenon}
+< topic 
+
+> topic tranzaksyon
+  + balans
+  * <get balans> == undefined =><set balans=0> {@balans zewo}
+  - Ou gen <get balans> HTG sou kont ou
+  ^ {topic=random}
+  
+  + balans zewo
+  - Ou gen 0 HTG sou kont ou
+  
+  + # #
+  - <call>tranzak <star1> <star2></call>
+
+  + setvar _ _ #
+  - Valè <star3> asiyen pou varyab <star2> pou itilizatè <star1><call>setvar <star1> <star2> <star3></call>
+   
+< topic
+  
+> object tranzak python
+    # This function get IDs, to set get and set variables for them upon transaction.
+    a, b = args
+    uid_current = rs.current_user()
+    uid_receiver = a
+    htg = int(b)
+    current_balance = rs.get_uservar(uid_current, "balans")
+    receiver_balance = rs.get_uservar(uid_receiver, "balans")
+    depo = htg + int(receiver_balance)
+    if int(current_balance) >= htg:
+        retre = int(current_balance) - htg
+        rs.set_uservar(uid_current, "balans", str(retre))
+        rs.set_uservar(uid_receiver, "balans", str(depo))
+        response = str(htg) + ' HTG' + ' ajoute sou kont ' + str(uid_receiver)
+        return response
+    else:
+        retry = rs.get_uservar(uid_current, "retry")
+        if retry ==  "undefined" or int(retry) < 2:
+            flag = 2
+            rs.set_uservar(uid_current, "retry", str(flag))
+            return 'Dezole, ou pa gen kantite kòb sa sou kont ou.\n'
+        elif int(retry) == 2:
+            flag = int(retry) + 1
+            rs.set_uservar(uid_current, "retry", str(flag))
+            return 'Sa fè dezyèm fwa ou eseye voye yon kantite kòb ou pa genyen.'
+        elif int(retry) == 3:
+            flag = int(retry) + 1
+            rs.set_uservar(uid_sender, "retry", str(flag))
+            return 'Sa fè twazyèm fwa ou eseye voye yon kantite kòb ou pa genyen.\n Nou oblije bloke kont ou an.'
+        else:
+            return 'Kont ou an gen restriksyon. Ou pap ka fè tranzaksyon sa. Tanpri kontakte ekip @admin pou swivi.'
+< object
+
+> object setvar python
+    uid = args[0]
+    var = args[1]
+    value = " ".join(args[1:])
+    rs.set_uservar(uid, var, value)
+< object
 
 // Language Substitutions
 ! sub telephone = telefon
@@ -77,6 +177,7 @@
 ! sub mpa	= mwen pa
 ! sub mpat	= mwen pa te
 ! sub mpral	= mwen pral
+! sub m pat	= mwen pa te
 ! sub mpap	= mwen pap
 ! sub fom	= fok mwen
 ! sub na	= nou ap
