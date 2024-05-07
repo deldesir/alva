@@ -9,10 +9,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 from flask import Flask, request, Response, jsonify
 import json
 from rivescript import RiveScript
+from redis_storage import RedisSessionStorage
 
 # Set up the RiveScript bot. This loads the replies from `/eg/brain` of the
 # git repository.
-bot = RiveScript()
+bot = RiveScript(
+    session_manager=RedisSessionStorage()
+)
 bot.load_directory(
     os.path.join(os.path.dirname(__file__), "..", "brain")
 )
@@ -38,7 +41,7 @@ def reply():
 
     username = params.get("username")
     message  = params.get("message")
-    uservars = params.get("vars", dict())
+#   uservars = params.get("vars", dict())
 
     # Make sure the required params are present.
     if username is None or message is None:
@@ -47,23 +50,11 @@ def reply():
             "error": "username and message are required keys",
         })
 
-    # Copy and user vars from the post into RiveScript.
-    if type(uservars) is dict:
-        for key, value in uservars.items():
-            bot.set_uservar(username, key, value)
-
     # Get a reply from the bot.
     reply = bot.reply(username, message)
 
-    # Get all the user's vars back out of the bot to include in the response.
-    uservars = bot.get_uservars(username)
-
     # Send the response.
-    return jsonify({
-        "status": "ok",
-        "reply": reply,
-        "vars": uservars,
-    })
+    return reply 
 
 @app.route("/")
 @app.route("/<path:path>")
@@ -83,4 +74,4 @@ def index(path=None):
     mimetype="text/plain")
 
 if __name__ == "__main__":
-    app.run(host='127.0.0.1', debug=True)
+    app.run(host='0.0.0.0', debug=True)
